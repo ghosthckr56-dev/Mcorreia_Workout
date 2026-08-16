@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>MCORREIA-WORKOUT_APP</title>
+<title>MCORREIA_WORKOUT</title>
 <link rel="manifest" href="manifest.json" />
 <link rel="icon" href="icons/icon-192.png" />
 <link rel="apple-touch-icon" href="icons/icon-192.png" />
 <meta name="theme-color" content="#121316" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="apple-mobile-web-app-title" content="MC Workout" />
+<meta name="apple-mobile-web-app-title" content="MCORREIA_WORKOUT" />
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Inter:wght@400;500;600;700&display=swap');
   * { box-sizing: border-box; }
@@ -88,6 +88,16 @@
   .timer-btn.stop { background: #E1522F; color: #fff; }
   .timer-btn.reset { background: #24272E; color: #ECEDEF; }
   .timer-box.ringing { border-color: #E1522F; }
+
+  .checkbtn { width: 26px; height: 26px; border-radius: 7px; border: 2px solid #33363D; background: transparent; color: #121316; font-size: 14px; font-weight: 900; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; padding: 0; }
+  .ex-log-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+  .ex-last { font-size: 11px; color: #9096A2; flex: 1; min-width: 90px; }
+  .ex-log-input { width: 68px; background: #14161A; border: 1px solid #33363D; border-radius: 8px; padding: 6px 8px; color: #ECEDEF; font-size: 13px; }
+  .ex-topo-label { font-size: 11px; color: #9096A2; display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+  .ex-log-save { padding: 6px 12px; border-radius: 8px; border: none; background: #24272E; color: #ECEDEF; font-size: 12px; font-weight: 700; cursor: pointer; }
+  .mini-badge { font-size: 9px; padding: 2px 7px; border-radius: 999px; font-weight: 800; letter-spacing: .02em; vertical-align: middle; margin-left: 6px; }
+
+  textarea { font-family: 'Inter', sans-serif; resize: vertical; }
 </style>
 </head>
 <body>
@@ -155,7 +165,20 @@ let state = {
   weightLogs: JSON.parse(localStorage.getItem("mc-weight-logs") || "[]"),
   pesoInput: "",
   timer: { total: 90, remaining: 90, running: false, ringing: false, intervalId: null },
+  checks: JSON.parse(localStorage.getItem("mc-checks") || "{}"),
+  exerciseLogs: JSON.parse(localStorage.getItem("mc-exlogs") || "{}"),
+  exInputs: {},
+  exportCode: "",
+  importMsg: "",
+  importOk: false,
 };
+
+function todayStr() { return new Date().toISOString().slice(0, 10); }
+
+function getExInput(nome) {
+  if (!state.exInputs[nome]) state.exInputs[nome] = { peso: "", topo: false };
+  return state.exInputs[nome];
+}
 
 const app = document.getElementById("app");
 
@@ -163,18 +186,20 @@ function render() {
   app.innerHTML = `
     <div class="header">
       <div class="eyebrow">PROGRAMA · 6 DIAS</div>
-      <div class="title">MCORREIA-WORKOUT_APP</div>
+      <div class="title">MCORREIA_WORKOUT</div>
     </div>
     <div class="content" id="content"></div>
     <div class="bottomnav">
       ${navBtn("treino", "Treino")}
       ${navBtn("macros", "Macros")}
       ${navBtn("peso", "Peso")}
+      ${navBtn("dados", "Dados")}
     </div>
   `;
   document.getElementById("content").innerHTML = state.tab === "treino" ? renderTreino()
     : state.tab === "macros" ? renderMacros()
-    : renderPeso();
+    : state.tab === "peso" ? renderPeso()
+    : renderDados();
   attachEvents();
 }
 
@@ -283,6 +308,39 @@ function renderTimer() {
   `;
 }
 
+// ---------------- REGISTO DE CARGA / PROGRESSÃO ----------------
+function toggleCheck(nome) {
+  const k = todayStr() + "::" + nome;
+  state.checks[k] = !state.checks[k];
+  localStorage.setItem("mc-checks", JSON.stringify(state.checks));
+  render();
+}
+
+function lastLog(nome) {
+  const arr = state.exerciseLogs[nome] || [];
+  return arr.length ? arr[arr.length - 1] : null;
+}
+
+function suggestUp(nome) {
+  const arr = state.exerciseLogs[nome] || [];
+  if (arr.length < 2) return false;
+  return arr.slice(-2).every(l => l.topo);
+}
+
+function saveExerciseLog(nome) {
+  const inp = state.exInputs[nome];
+  const v = inp && parseFloat(inp.peso);
+  if (!v) return;
+  const hoje = todayStr();
+  const arr = state.exerciseLogs[nome] || [];
+  const semHoje = arr.filter(l => l.data !== hoje);
+  const novos = [...semHoje, { data: hoje, peso: v, topo: !!inp.topo }].sort((a, b) => a.data.localeCompare(b.data));
+  state.exerciseLogs[nome] = novos;
+  localStorage.setItem("mc-exlogs", JSON.stringify(state.exerciseLogs));
+  state.exInputs[nome] = { peso: "", topo: false };
+  render();
+}
+
 // ---------------- TREINO ----------------
 function renderTreino() {
   const dia = PLANO[state.diaIdx];
@@ -308,12 +366,29 @@ function renderTreino() {
     const gruposHtml = Object.entries(grupos).map(([grupo, exs]) => `
       <div style="margin-bottom:18px;">
         <div class="group-label">${grupo}</div>
-        ${exs.map(ex => `
-          <div class="card ex-row">
-            <span class="ex-name">${ex.nome}</span>
-            <span class="ex-series" style="color:${dia.cor}">${ex.series}</span>
+        ${exs.map(ex => {
+          const done = !!state.checks[todayStr() + "::" + ex.nome];
+          const last = lastLog(ex.nome);
+          const inp = getExInput(ex.nome);
+          const suggest = suggestUp(ex.nome);
+          return `
+          <div class="card" style="margin-bottom:8px;">
+            <div class="ex-row" style="margin-bottom:0;">
+              <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+                <button class="checkbtn" data-check="${ex.nome}"
+                  style="border-color:${dia.cor}; ${done ? `background:${dia.cor}` : ""}">${done ? "✓" : ""}</button>
+                <span class="ex-name">${ex.nome}${suggest ? `<span class="mini-badge" style="background:${dia.cor};color:#121316;">↑ SOBE PESO</span>` : ""}</span>
+              </div>
+              <span class="ex-series" style="color:${dia.cor}; flex-shrink:0; margin-left:8px;">${ex.series}</span>
+            </div>
+            <div class="ex-log-row">
+              <span class="ex-last">${last ? `Última carga: ${last.peso}kg` : "Sem registro"}</span>
+              <input class="ex-log-input" type="number" placeholder="kg hoje" data-exlog="${ex.nome}" value="${inp.peso}" />
+              <label class="ex-topo-label"><input type="checkbox" data-extopo="${ex.nome}" ${inp.topo ? "checked" : ""} /> topo</label>
+              <button class="ex-log-save" data-exsave="${ex.nome}">OK</button>
+            </div>
           </div>
-        `).join("")}
+        `;}).join("")}
       </div>
     `).join("");
 
@@ -485,6 +560,50 @@ function renderPeso() {
   `;
 }
 
+// ---------------- DADOS (SINCRONIZAÇÃO) ----------------
+function exportData() {
+  const payload = {
+    macro: state.macroForm,
+    weight: state.weightLogs,
+    checks: state.checks,
+    exlogs: state.exerciseLogs,
+  };
+  return btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+}
+
+function importData(str) {
+  try {
+    const json = decodeURIComponent(escape(atob(str.trim())));
+    const payload = JSON.parse(json);
+    if (payload.macro) { state.macroForm = payload.macro; localStorage.setItem("mc-macro-profile", JSON.stringify(payload.macro)); }
+    if (payload.weight) { state.weightLogs = payload.weight; localStorage.setItem("mc-weight-logs", JSON.stringify(payload.weight)); }
+    if (payload.checks) { state.checks = payload.checks; localStorage.setItem("mc-checks", JSON.stringify(payload.checks)); }
+    if (payload.exlogs) { state.exerciseLogs = payload.exlogs; localStorage.setItem("mc-exlogs", JSON.stringify(payload.exlogs)); }
+    return true;
+  } catch (e) { return false; }
+}
+
+function renderDados() {
+  return `
+    <div class="oswald" style="font-size:22px;font-weight:700;margin-bottom:10px;">Sincronizar dados</div>
+    <div class="note" style="margin-top:0;margin-bottom:16px;">Gera um código com todo o seu histórico (peso, cargas registadas, macros) pra copiar e colar noutro dispositivo — celular, PC, etc.</div>
+
+    <button class="btn-primary" id="btn-export" style="margin-top:0;">GERAR CÓDIGO</button>
+    ${state.exportCode ? `
+      <textarea id="export-output" readonly onclick="this.select()"
+        style="width:100%;min-height:110px;margin-top:12px;background:#1B1D22;border:1px solid #33363D;border-radius:10px;color:#ECEDEF;padding:10px;font-size:11px;">${state.exportCode}</textarea>
+      <div class="note" style="margin-top:6px;">Toque no código pra selecionar tudo, depois copie e cole no outro dispositivo, na caixa "Importar código" abaixo.</div>
+    ` : ""}
+
+    <div style="height:28px;"></div>
+    <div class="group-label">Importar código</div>
+    <textarea id="import-input" placeholder="Cole aqui o código gerado no outro dispositivo"
+      style="width:100%;min-height:110px;background:#1B1D22;border:1px solid #33363D;border-radius:10px;color:#ECEDEF;padding:10px;font-size:12px;"></textarea>
+    <button class="btn-primary" id="btn-import">IMPORTAR</button>
+    ${state.importMsg ? `<div class="note" style="color:${state.importOk ? "#F5C518" : "#E1522F"}">${state.importMsg}</div>` : ""}
+  `;
+}
+
 // ---------------- EVENTOS ----------------
 function attachEvents() {
   document.querySelectorAll("[data-nav]").forEach(btn => {
@@ -492,7 +611,17 @@ function attachEvents() {
   });
 
   document.querySelectorAll("[data-dia]").forEach(btn => {
-    btn.onclick = () => { state.diaIdx = parseInt(btn.dataset.dia); render(); };
+    btn.onclick = () => {
+      state.diaIdx = parseInt(btn.dataset.dia);
+      const d = PLANO[state.diaIdx];
+      if (!state.timer.running && d.ciclo) {
+        const sug = d.ciclo === "Força" ? 90 : 60;
+        state.timer.total = sug;
+        state.timer.remaining = sug;
+        state.timer.ringing = false;
+      }
+      render();
+    };
   });
 
   document.querySelectorAll("[data-obj]").forEach(btn => {
@@ -534,6 +663,33 @@ function attachEvents() {
       if (btn.dataset.timer === "reset") resetTimer();
     };
   });
+
+  document.querySelectorAll("[data-check]").forEach(btn => {
+    btn.onclick = () => toggleCheck(btn.dataset.check);
+  });
+  document.querySelectorAll("[data-exlog]").forEach(el => {
+    el.oninput = (e) => { getExInput(el.dataset.exlog).peso = e.target.value; };
+  });
+  document.querySelectorAll("[data-extopo]").forEach(el => {
+    el.onchange = (e) => { getExInput(el.dataset.extopo).topo = e.target.checked; };
+  });
+  document.querySelectorAll("[data-exsave]").forEach(btn => {
+    btn.onclick = () => saveExerciseLog(btn.dataset.exsave);
+  });
+
+  const btnExport = document.getElementById("btn-export");
+  if (btnExport) btnExport.onclick = () => {
+    state.exportCode = exportData();
+    render();
+  };
+  const btnImport = document.getElementById("btn-import");
+  if (btnImport) btnImport.onclick = () => {
+    const val = document.getElementById("import-input").value;
+    const ok = importData(val);
+    state.importOk = ok;
+    state.importMsg = ok ? "Dados importados com sucesso." : "Código inválido — confira se copiou tudo certo.";
+    render();
+  };
 }
 
 render();
