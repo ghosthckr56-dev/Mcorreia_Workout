@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>MCORREIA-WORKOUT_APP</title>
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icons/icon-192.png" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<meta name="theme-color" content="#121316" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="MC Workout" />
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Inter:wght@400;500;600;700&display=swap');
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #121316; color: #ECEDEF; font-family: 'Inter', -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
+  ::-webkit-scrollbar { display: none; }
+  .oswald { font-family: 'Oswald', sans-serif; }
+  button, select, input { font-family: inherit; }
+  #app { min-height: 100vh; padding-bottom: 90px; }
+
+  .header { padding: 24px 16px 12px; }
+  .eyebrow { font-family: 'Oswald', sans-serif; font-size: 13px; letter-spacing: .25em; color: #F5C518; font-weight: 700; }
+  .title { font-family: 'Oswald', sans-serif; font-size: 26px; font-weight: 700; letter-spacing: .01em; margin-top: 2px; word-break: break-word; }
+
+  .content { padding: 0 16px; }
+
+  .pillrow { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 18px; }
+  .pill { padding: 8px 14px; border-radius: 999px; border: 1px solid #33363D; background: transparent; color: #9096A2; font-weight: 700; font-size: 13px; letter-spacing: .03em; white-space: nowrap; cursor: pointer; transition: all .15s ease; }
+  .pill.active { color: #121316; }
+
+  .card { background: #1B1D22; border: 1px solid #24272E; border-radius: 12px; padding: 12px 14px; }
+  .rest-card { background: #1B1D22; border: 1px solid #24272E; border-radius: 16px; padding: 40px 20px; text-align: center; }
+
+  .group-label { font-size: 11px; font-weight: 700; letter-spacing: .1em; color: #9096A2; margin-bottom: 8px; text-transform: uppercase; }
+  .ex-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .ex-name { font-size: 14.5px; font-weight: 500; }
+  .ex-series { font-family: 'Oswald', sans-serif; font-size: 14px; font-weight: 700; }
+
+  .badge { color: #121316; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px; letter-spacing: .04em; }
+
+  .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+  .field label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #9096A2; font-weight: 700; }
+  .field input, .field select { background: #1B1D22; border: 1px solid #33363D; border-radius: 10px; padding: 10px 12px; color: #ECEDEF; font-size: 15px; outline: none; width: 100%; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+  .btn-primary { width: 100%; padding: 14px 0; border-radius: 12px; border: none; background: #F5C518; color: #121316; font-weight: 700; font-size: 15px; letter-spacing: .03em; cursor: pointer; margin-top: 18px; }
+
+  .result-hero { background: #1B1D22; border: 1px solid #24272E; border-radius: 16px; padding: 18px; text-align: center; margin-bottom: 12px; }
+  .result-hero .lbl { font-size: 11px; color: #9096A2; font-weight: 700; letter-spacing: .08em; }
+  .result-hero .num { font-family: 'Oswald', sans-serif; font-size: 40px; font-weight: 700; color: #F5C518; }
+  .result-hero .sub { font-size: 12px; color: #9096A2; }
+
+  .macro-card { border-radius: 12px; padding: 14px 8px; text-align: center; background: #1B1D22; border: 1px solid #33363D44; }
+  .macro-card .val { font-family: 'Oswald', sans-serif; font-size: 22px; font-weight: 700; }
+  .macro-card .lbl { font-size: 11px; color: #9096A2; font-weight: 600; margin-top: 2px; }
+
+  .note { font-size: 12px; color: #9096A2; margin-top: 12px; line-height: 1.5; }
+
+  .weight-input-row { display: flex; gap: 10px; margin-bottom: 18px; }
+  .weight-input-row input { flex: 1; }
+  .btn-save { padding: 0 20px; border-radius: 10px; border: none; background: #F5C518; color: #121316; font-weight: 700; cursor: pointer; }
+
+  .empty { color: #9096A2; font-size: 14px; text-align: center; padding: 30px 0; }
+
+  .variation { background: #1B1D22; border: 1px solid #24272E; border-radius: 12px; padding: 10px 14px; margin-bottom: 14px; font-size: 13px; color: #9096A2; }
+
+  .log-row { background: #1B1D22; border: 1px solid #24272E; border-radius: 10px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .log-date { font-size: 13px; color: #9096A2; }
+  .log-val { font-family: 'Oswald', sans-serif; font-size: 16px; font-weight: 700; }
+  .log-remove { background: none; border: none; color: #E1522F; font-size: 13px; cursor: pointer; }
+
+  .bottomnav { position: fixed; bottom: 0; left: 0; right: 0; background: #181A1F; border-top: 1px solid #24272E; display: flex; padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); gap: 8px; }
+  .navbtn { flex: 1; padding: 12px 0; border-radius: 12px; border: none; background: transparent; color: #9096A2; font-weight: 700; font-size: 13px; letter-spacing: .04em; text-transform: uppercase; cursor: pointer; }
+  .navbtn.active { background: #F5C518; color: #121316; }
+
+  svg.chart { width: 100%; height: 180px; overflow: visible; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+// ---------------- DADOS DO TREINO ----------------
+const PLANO = [
+  { dia: "Segunda", tipo: "Push", ciclo: "Força", cor: "#F5C518", exercicios: [
+    { grupo: "Peito", nome: "Supino com halteres", series: "4x6-8" },
+    { grupo: "Peito", nome: "Crucifixo", series: "3x8-10" },
+    { grupo: "Ombro", nome: "Desenvolvimento de ombro", series: "4x6-8" },
+    { grupo: "Ombro", nome: "Elevação lateral", series: "4x10-12" },
+    { grupo: "Tríceps", nome: "Tríceps francês", series: "3x8-10" },
+    { grupo: "Tríceps", nome: "Tríceps coice", series: "3x10-12" },
+  ]},
+  { dia: "Terça", tipo: "Pull", ciclo: "Força", cor: "#F5C518", exercicios: [
+    { grupo: "Costas", nome: "Remada curvada", series: "4x6-8" },
+    { grupo: "Costas", nome: "Remada unilateral (serrote)", series: "4x6-8 cada lado" },
+    { grupo: "Costas", nome: "Pullover", series: "3x8-10" },
+    { grupo: "Bíceps", nome: "Rosca direta", series: "4x8-10" },
+    { grupo: "Bíceps", nome: "Rosca martelo", series: "3x10-12" },
+  ]},
+  { dia: "Quarta", tipo: "Legs", ciclo: "Força", cor: "#F5C518", exercicios: [
+    { grupo: "Quadríceps", nome: "Agachamento goblet", series: "4x6-8" },
+    { grupo: "Quadríceps/Glúteo", nome: "Afundo", series: "4x8 cada perna" },
+    { grupo: "Posterior/Glúteo", nome: "Stiff", series: "4x6-8" },
+    { grupo: "Panturrilha", nome: "Panturrilha", series: "4x12-15" },
+  ]},
+  { dia: "Quinta", tipo: "Push", ciclo: "Hipertrofia", cor: "#E1522F", exercicios: [
+    { grupo: "Peito", nome: "Supino inclinado", series: "4x10-12" },
+    { grupo: "Ombro", nome: "Arnold press", series: "4x10-12" },
+    { grupo: "Ombro (posterior)", nome: "Voador invertido", series: "4x12-15" },
+    { grupo: "Tríceps", nome: "Extensão de tríceps acima da cabeça", series: "3x12-15" },
+    { grupo: "Tríceps", nome: "Tríceps francês unilateral", series: "3x12-15" },
+  ]},
+  { dia: "Sexta", tipo: "Pull", ciclo: "Hipertrofia", cor: "#E1522F", exercicios: [
+    { grupo: "Costas", nome: "Remada renegade", series: "4x10-12" },
+    { grupo: "Costas", nome: "Remada alta", series: "4x12-15" },
+    { grupo: "Bíceps", nome: "Rosca alternada", series: "4x12-15 cada braço" },
+    { grupo: "Bíceps", nome: "Rosca concentrada", series: "3x12-15" },
+  ]},
+  { dia: "Sábado", tipo: "Legs", ciclo: "Hipertrofia", cor: "#E1522F", exercicios: [
+    { grupo: "Quadríceps/Glúteo", nome: "Agachamento búlgaro", series: "4x10-12 cada perna" },
+    { grupo: "Posterior/Glúteo", nome: "Levantamento terra romeno unilateral", series: "4x10-12 cada perna" },
+    { grupo: "Quadríceps/Glúteo", nome: "Sumô goblet squat", series: "4x12-15" },
+    { grupo: "Panturrilha", nome: "Panturrilha em pé", series: "4x15-20" },
+  ]},
+  { dia: "Domingo", tipo: "Descanso", ciclo: null, cor: "#33363D", exercicios: [] },
+];
+
+function diaAtualIdx() {
+  const map = [6, 0, 1, 2, 3, 4, 5]; // getDay(): Dom=0...Sáb=6 -> índice no array PLANO
+  return map[new Date().getDay()];
+}
+
+// ---------------- ESTADO ----------------
+let state = {
+  tab: "treino",
+  diaIdx: diaAtualIdx(),
+  macroForm: JSON.parse(localStorage.getItem("mc-macro-profile") || "null") || {
+    peso: "", altura: "", idade: "", sexo: "M", atividade: "1.55", objetivo: "manter",
+  },
+  macroResultado: null,
+  weightLogs: JSON.parse(localStorage.getItem("mc-weight-logs") || "[]"),
+  pesoInput: "",
+};
+
+const app = document.getElementById("app");
+
+function render() {
+  app.innerHTML = `
+    <div class="header">
+      <div class="eyebrow">PROGRAMA · 6 DIAS</div>
+      <div class="title">MCORREIA-WORKOUT_APP</div>
+    </div>
+    <div class="content" id="content"></div>
+    <div class="bottomnav">
+      ${navBtn("treino", "Treino")}
+      ${navBtn("macros", "Macros")}
+      ${navBtn("peso", "Peso")}
+    </div>
+  `;
+  document.getElementById("content").innerHTML = state.tab === "treino" ? renderTreino()
+    : state.tab === "macros" ? renderMacros()
+    : renderPeso();
+  attachEvents();
+}
+
+function navBtn(id, label) {
+  return `<button class="navbtn ${state.tab === id ? "active" : ""}" data-nav="${id}">${label}</button>`;
+}
+
+// ---------------- TREINO ----------------
+function renderTreino() {
+  const dia = PLANO[state.diaIdx];
+  let pills = PLANO.map((d, i) => `
+    <button class="pill ${i === state.diaIdx ? "active" : ""}" data-dia="${i}"
+      style="border-color:${d.cor}; ${i === state.diaIdx ? `background:${d.cor}` : ""}">
+      ${d.dia.slice(0,3).toUpperCase()}
+    </button>
+  `).join("");
+
+  let body;
+  if (dia.tipo === "Descanso") {
+    body = `<div class="rest-card">
+      <div class="oswald" style="font-size:22px;font-weight:700;">DESCANSO</div>
+      <div style="color:#9096A2;font-size:14px;margin-top:6px;">Recuperação também é treino. Aproveite.</div>
+    </div>`;
+  } else {
+    const grupos = {};
+    dia.exercicios.forEach(ex => {
+      if (!grupos[ex.grupo]) grupos[ex.grupo] = [];
+      grupos[ex.grupo].push(ex);
+    });
+    const gruposHtml = Object.entries(grupos).map(([grupo, exs]) => `
+      <div style="margin-bottom:18px;">
+        <div class="group-label">${grupo}</div>
+        ${exs.map(ex => `
+          <div class="card ex-row">
+            <span class="ex-name">${ex.nome}</span>
+            <span class="ex-series" style="color:${dia.cor}">${ex.series}</span>
+          </div>
+        `).join("")}
+      </div>
+    `).join("");
+
+    body = `
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <div class="oswald" style="font-size:24px;font-weight:700;">${dia.tipo.toUpperCase()}</div>
+        <div class="badge" style="background:${dia.cor}">${dia.ciclo.toUpperCase()}</div>
+      </div>
+      ${gruposHtml}
+    `;
+  }
+
+  return `<div class="pillrow">${pills}</div>${body}`;
+}
+
+// ---------------- MACROS ----------------
+function calcularMacros() {
+  const f = state.macroForm;
+  const peso = parseFloat(f.peso), altura = parseFloat(f.altura), idade = parseFloat(f.idade);
+  if (!peso || !altura || !idade) return;
+
+  const bmr = f.sexo === "M"
+    ? 10 * peso + 6.25 * altura - 5 * idade + 5
+    : 10 * peso + 6.25 * altura - 5 * idade - 161;
+  const tdee = bmr * parseFloat(f.atividade);
+
+  let calorias = tdee;
+  if (f.objetivo === "perder") calorias = tdee - 450;
+  if (f.objetivo === "ganhar") calorias = tdee + 350;
+
+  const proteinaG = peso * 2.0;
+  const gorduraG = (calorias * 0.25) / 9;
+  const proteinaCal = proteinaG * 4;
+  const gorduraCal = gorduraG * 9;
+  const carboCal = Math.max(calorias - proteinaCal - gorduraCal, 0);
+  const carboG = carboCal / 4;
+
+  state.macroResultado = {
+    tdee: Math.round(tdee), calorias: Math.round(calorias),
+    proteina: Math.round(proteinaG), carbo: Math.round(carboG), gordura: Math.round(gorduraG),
+  };
+  localStorage.setItem("mc-macro-profile", JSON.stringify(f));
+  render();
+}
+
+function renderMacros() {
+  const f = state.macroForm;
+  const objetivos = [["perder","Emagrecer"],["manter","Manter"],["ganhar","Ganhar massa"]];
+
+  let resultadoHtml = "";
+  if (state.macroResultado) {
+    const r = state.macroResultado;
+    resultadoHtml = `
+      <div style="margin-top:22px;">
+        <div class="result-hero">
+          <div class="lbl">CALORIAS DIÁRIAS</div>
+          <div class="num">${r.calorias}</div>
+          <div class="sub">kcal · manutenção estimada: ${r.tdee} kcal</div>
+        </div>
+        <div class="grid3">
+          <div class="macro-card" style="border-color:#E1522F44"><div class="val" style="color:#E1522F">${r.proteina}g</div><div class="lbl">Proteína</div></div>
+          <div class="macro-card" style="border-color:#F5C51844"><div class="val" style="color:#F5C518">${r.carbo}g</div><div class="lbl">Carbo</div></div>
+          <div class="macro-card" style="border-color:#6FA8DC44"><div class="val" style="color:#6FA8DC">${r.gordura}g</div><div class="lbl">Gordura</div></div>
+        </div>
+        <div class="note">Estimativa baseada na fórmula de Mifflin-St Jeor. Proteína calculada em 2g/kg de peso corporal — adequado para treino de força. Ajuste conforme sua resposta ao longo das semanas.</div>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="oswald" style="font-size:22px;font-weight:700;margin-bottom:16px;">Calculadora de macros</div>
+    <div class="grid2">
+      <div class="field"><label>Peso (kg)</label><input type="number" id="f-peso" value="${f.peso}" /></div>
+      <div class="field"><label>Altura (cm)</label><input type="number" id="f-altura" value="${f.altura}" /></div>
+      <div class="field"><label>Idade</label><input type="number" id="f-idade" value="${f.idade}" /></div>
+      <div class="field"><label>Sexo</label>
+        <select id="f-sexo">
+          <option value="M" ${f.sexo==="M"?"selected":""}>Masculino</option>
+          <option value="F" ${f.sexo==="F"?"selected":""}>Feminino</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label>Nível de atividade</label>
+      <select id="f-atividade">
+        <option value="1.2" ${f.atividade==="1.2"?"selected":""}>Sedentário (escritório, pouco exercício)</option>
+        <option value="1.375" ${f.atividade==="1.375"?"selected":""}>Leve (1-3x treino/semana)</option>
+        <option value="1.55" ${f.atividade==="1.55"?"selected":""}>Moderado (treino 4-6x/semana)</option>
+        <option value="1.725" ${f.atividade==="1.725"?"selected":""}>Alto (treino intenso quase todo dia)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Objetivo</label>
+      <div style="display:flex;gap:8px;">
+        ${objetivos.map(([v,l]) => `
+          <button class="pill ${f.objetivo===v?"active":""}" data-obj="${v}" style="border-color:#F5C518; ${f.objetivo===v?"background:#F5C518":""}">${l}</button>
+        `).join("")}
+      </div>
+    </div>
+    <button class="btn-primary" id="btn-calcular">CALCULAR</button>
+    ${resultadoHtml}
+  `;
+}
+
+// ---------------- PESO ----------------
+function salvarPeso() {
+  const v = parseFloat(state.pesoInput);
+  if (!v) return;
+  const hoje = new Date().toISOString().slice(0,10);
+  const semHoje = state.weightLogs.filter(l => l.data !== hoje);
+  const novos = [...semHoje, { data: hoje, peso: v }].sort((a,b) => a.data.localeCompare(b.data));
+  state.weightLogs = novos;
+  localStorage.setItem("mc-weight-logs", JSON.stringify(novos));
+  state.pesoInput = "";
+  render();
+}
+
+function removerPeso(data) {
+  state.weightLogs = state.weightLogs.filter(l => l.data !== data);
+  localStorage.setItem("mc-weight-logs", JSON.stringify(state.weightLogs));
+  render();
+}
+
+function renderChart(logs) {
+  const w = 320, h = 160, pad = 24;
+  const pesos = logs.map(l => l.peso);
+  const min = Math.min(...pesos) - 1, max = Math.max(...pesos) + 1;
+  const pts = logs.map((l, i) => {
+    const x = pad + (i / (logs.length - 1)) * (w - pad * 2);
+    const y = h - pad - ((l.peso - min) / (max - min || 1)) * (h - pad * 2);
+    return [x, y];
+  });
+  const path = pts.map((p, i) => (i === 0 ? "M" : "L") + p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" ");
+  const dots = pts.map(p => `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.5" fill="#F5C518" />`).join("");
+  return `<svg class="chart" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+    <line x1="${pad}" y1="${h-pad}" x2="${w-pad}" y2="${h-pad}" stroke="#24272E" />
+    <path d="${path}" fill="none" stroke="#F5C518" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+    ${dots}
+  </svg>`;
+}
+
+function renderPeso() {
+  const logs = state.weightLogs;
+  let variacaoHtml = "";
+  if (logs.length >= 2) {
+    const variacao = logs[logs.length-1].peso - logs[0].peso;
+    variacaoHtml = `<div class="variation">Variação total: <span style="color:${variacao<=0?'#F5C518':'#E1522F'};font-weight:700;">${variacao>0?"+":""}${variacao.toFixed(1)} kg</span> desde o primeiro registro</div>`;
+  }
+
+  let listHtml = logs.length === 0
+    ? `<div class="empty">Nenhum registro ainda. Adicione seu peso de hoje para começar o histórico.</div>`
+    : [...logs].reverse().map(l => `
+        <div class="log-row">
+          <span class="log-date">${new Date(l.data+"T00:00:00").toLocaleDateString("pt-BR",{day:"2-digit",month:"short"})}</span>
+          <span class="log-val">${l.peso} kg</span>
+          <button class="log-remove" data-remove="${l.data}">Remover</button>
+        </div>
+      `).join("");
+
+  return `
+    <div class="oswald" style="font-size:22px;font-weight:700;margin-bottom:16px;">Controlo de peso</div>
+    <div class="weight-input-row">
+      <input type="number" id="peso-input" placeholder="Peso de hoje (kg)" value="${state.pesoInput}" />
+      <button class="btn-save" id="btn-salvar-peso">Salvar</button>
+    </div>
+    ${variacaoHtml}
+    ${logs.length >= 2 ? `<div style="margin-bottom:20px;">${renderChart(logs)}</div>` : ""}
+    ${listHtml}
+  `;
+}
+
+// ---------------- EVENTOS ----------------
+function attachEvents() {
+  document.querySelectorAll("[data-nav]").forEach(btn => {
+    btn.onclick = () => { state.tab = btn.dataset.nav; render(); };
+  });
+
+  document.querySelectorAll("[data-dia]").forEach(btn => {
+    btn.onclick = () => { state.diaIdx = parseInt(btn.dataset.dia); render(); };
+  });
+
+  document.querySelectorAll("[data-obj]").forEach(btn => {
+    btn.onclick = () => { state.macroForm.objetivo = btn.dataset.obj; render(); };
+  });
+
+  const bindInput = (id, key) => {
+    const el = document.getElementById(id);
+    if (el) el.oninput = (e) => { state.macroForm[key] = e.target.value; };
+  };
+  bindInput("f-peso", "peso");
+  bindInput("f-altura", "altura");
+  bindInput("f-idade", "idade");
+  const sexoEl = document.getElementById("f-sexo");
+  if (sexoEl) sexoEl.onchange = (e) => { state.macroForm.sexo = e.target.value; };
+  const ativEl = document.getElementById("f-atividade");
+  if (ativEl) ativEl.onchange = (e) => { state.macroForm.atividade = e.target.value; };
+
+  const btnCalc = document.getElementById("btn-calcular");
+  if (btnCalc) btnCalc.onclick = calcularMacros;
+
+  const pesoInputEl = document.getElementById("peso-input");
+  if (pesoInputEl) pesoInputEl.oninput = (e) => { state.pesoInput = e.target.value; };
+  const btnSalvarPeso = document.getElementById("btn-salvar-peso");
+  if (btnSalvarPeso) btnSalvarPeso.onclick = salvarPeso;
+
+  document.querySelectorAll("[data-remove]").forEach(btn => {
+    btn.onclick = () => removerPeso(btn.dataset.remove);
+  });
+}
+
+render();
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
