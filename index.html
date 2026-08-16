@@ -78,6 +78,16 @@
   .navbtn.active { background: #F5C518; color: #121316; }
 
   svg.chart { width: 100%; height: 180px; overflow: visible; }
+
+  .timer-box { background: #1B1D22; border: 1px solid #24272E; border-radius: 16px; padding: 18px; text-align: center; margin-bottom: 18px; }
+  .timer-display { font-family: 'Oswald', sans-serif; font-size: 52px; font-weight: 700; color: #F5C518; letter-spacing: .02em; }
+  .timer-presets { display: flex; gap: 8px; justify-content: center; margin: 12px 0; flex-wrap: wrap; }
+  .timer-controls { display: flex; gap: 10px; justify-content: center; margin-top: 10px; }
+  .timer-btn { padding: 12px 22px; border-radius: 12px; border: none; font-weight: 700; font-size: 14px; cursor: pointer; letter-spacing: .03em; }
+  .timer-btn.start { background: #F5C518; color: #121316; }
+  .timer-btn.stop { background: #E1522F; color: #fff; }
+  .timer-btn.reset { background: #24272E; color: #ECEDEF; }
+  .timer-box.ringing { border-color: #E1522F; }
 </style>
 </head>
 <body>
@@ -144,6 +154,7 @@ let state = {
   macroResultado: null,
   weightLogs: JSON.parse(localStorage.getItem("mc-weight-logs") || "[]"),
   pesoInput: "",
+  timer: { total: 90, remaining: 90, running: false, ringing: false, intervalId: null },
 };
 
 const app = document.getElementById("app");
@@ -169,6 +180,107 @@ function render() {
 
 function navBtn(id, label) {
   return `<button class="navbtn ${state.tab === id ? "active" : ""}" data-nav="${id}">${label}</button>`;
+}
+
+// ---------------- CRONÔMETRO ----------------
+function formatTime(s) {
+  const m = Math.floor(s / 60), sec = s % 60;
+  return `${m}:${sec.toString().padStart(2, "0")}`;
+}
+
+function playBeep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    let t = ctx.currentTime;
+    for (let i = 0; i < 3; i++) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = 880;
+      gain.gain.setValueAtTime(0.3, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.4);
+      t += 0.5;
+    }
+  } catch (e) { /* áudio indisponível */ }
+}
+
+function updateTimerDisplay() {
+  const el = document.getElementById("timer-display");
+  if (el) el.textContent = formatTime(state.timer.remaining);
+  const box = document.getElementById("timer-box");
+  if (box) box.classList.toggle("ringing", state.timer.ringing);
+}
+
+function tickTimer() {
+  state.timer.remaining -= 1;
+  if (state.timer.remaining <= 0) {
+    state.timer.remaining = 0;
+    clearInterval(state.timer.intervalId);
+    state.timer.running = false;
+    state.timer.ringing = true;
+    playBeep();
+    if (navigator.vibrate) navigator.vibrate([300, 150, 300, 150, 300]);
+    render();
+    return;
+  }
+  updateTimerDisplay();
+}
+
+function startTimer() {
+  if (state.timer.running) return;
+  if (state.timer.remaining <= 0) { state.timer.remaining = state.timer.total; state.timer.ringing = false; }
+  state.timer.running = true;
+  state.timer.intervalId = setInterval(tickTimer, 1000);
+  render();
+}
+
+function pauseTimer() {
+  clearInterval(state.timer.intervalId);
+  state.timer.running = false;
+  render();
+}
+
+function resetTimer() {
+  clearInterval(state.timer.intervalId);
+  state.timer.running = false;
+  state.timer.ringing = false;
+  state.timer.remaining = state.timer.total;
+  render();
+}
+
+function setPresetTimer(sec) {
+  clearInterval(state.timer.intervalId);
+  state.timer.running = false;
+  state.timer.ringing = false;
+  state.timer.total = sec;
+  state.timer.remaining = sec;
+  render();
+}
+
+function renderTimer() {
+  const t = state.timer;
+  const presets = [30, 60, 90, 120];
+  return `
+    <div class="timer-box ${t.ringing ? "ringing" : ""}" id="timer-box">
+      <div class="group-label" style="margin-bottom:8px;">Cronômetro de descanso</div>
+      <div class="timer-display" id="timer-display">${formatTime(t.remaining)}</div>
+      <div class="timer-presets">
+        ${presets.map(p => `
+          <button class="pill ${t.total === p ? "active" : ""}" data-preset="${p}"
+            style="border-color:#F5C518; ${t.total === p ? "background:#F5C518" : ""}">${p}s</button>
+        `).join("")}
+      </div>
+      <div class="timer-controls">
+        ${t.running
+          ? `<button class="timer-btn stop" data-timer="pause">Pausar</button>`
+          : `<button class="timer-btn start" data-timer="start">${t.remaining === 0 ? "Reiniciar" : "Iniciar"}</button>`}
+        <button class="timer-btn reset" data-timer="reset">Zerar</button>
+      </div>
+    </div>
+  `;
 }
 
 // ---------------- TREINO ----------------
@@ -214,7 +326,7 @@ function renderTreino() {
     `;
   }
 
-  return `<div class="pillrow">${pills}</div>${body}`;
+  return `${renderTimer()}<div class="pillrow">${pills}</div>${body}`;
 }
 
 // ---------------- MACROS ----------------
@@ -409,6 +521,18 @@ function attachEvents() {
 
   document.querySelectorAll("[data-remove]").forEach(btn => {
     btn.onclick = () => removerPeso(btn.dataset.remove);
+  });
+
+  document.querySelectorAll("[data-preset]").forEach(btn => {
+    btn.onclick = () => setPresetTimer(parseInt(btn.dataset.preset));
+  });
+  const timerBtns = document.querySelectorAll("[data-timer]");
+  timerBtns.forEach(btn => {
+    btn.onclick = () => {
+      if (btn.dataset.timer === "start") startTimer();
+      if (btn.dataset.timer === "pause") pauseTimer();
+      if (btn.dataset.timer === "reset") resetTimer();
+    };
   });
 }
 
