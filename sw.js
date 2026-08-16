@@ -1,4 +1,4 @@
-const CACHE = "mcorreia-workout-v1";
+const CACHE = "mcorreia-workout-v2";
 const ASSETS = ["./", "./index.html", "./manifest.json", ""];
 
 self.addEventListener("install", (e) => {
